@@ -1,0 +1,46 @@
+.parcel-grid-container {
+    padding: 1rem;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.parcel-grid-container h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.grid-row {
+    display: flex;
+    gap: 4px;
+}
+
+.grid-cell {
+    width: 60px;
+    height: 60px;
+}
+
+.parcel {
+    width: 100%;
+    height: 100%;
+    background-color: #a5d6a7;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.empty-parcel {
+    width: 100%;
+    height: 100%;
+    background-color: #eeeeee;
+    border-radius: 4px;
+}
