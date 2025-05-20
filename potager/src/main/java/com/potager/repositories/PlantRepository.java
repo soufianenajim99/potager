@@ -13,14 +13,11 @@ import java.util.Optional;
 @Repository
 public interface PlantRepository extends JpaRepository<Plant, Long> {
 
-    // Find plants by species
     List<Plant> findBySpecies(String species);
 
-    // Find plants that are runners
     List<Plant> findByIsRunnerTrue();
     List<Plant> findByParcelId(Long parcelId);
 
-    // Find plants that have reached maturity
     @Query("SELECT p FROM Plant p WHERE p.currentAge >= p.maturityAge")
     List<Plant> findMaturePlants();
 }

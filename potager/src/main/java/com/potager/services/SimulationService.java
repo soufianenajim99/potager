@@ -22,60 +22,96 @@ public class SimulationService {
     private final PlantRepository plantRepository;
     private final InsectRepository insectRepository;
     private final TreatmentService treatmentService;
+    private final SimulationStateRepository simulationStateRepository;
 
-    private boolean isRunning = false;
-    private int currentStep = 0;
-    private double speedMultiplier = 1.0;
+    private long lastExecutionTime = 0;
 
-    @Scheduled(fixedRateString = "#{1000 / speedMultiplier}")
+    private boolean shouldExecuteStep() {
+        double multiplier = getCurrentSpeedMultiplier();
+        long now = System.currentTimeMillis();
+        long interval = Math.round(1000 / multiplier);
+        if (now - lastExecutionTime >= interval) {
+            lastExecutionTime = now;
+            return true;
+        }
+        return false;
+    }
+
+    @Scheduled(fixedRate = 1000)
     public void runSimulation() {
-        if (isRunning) {
-            executeSimulationStep();
+        if (shouldExecuteStep()) {
+            SimulationState state = getSimulationState();
+            if (state.getIsRunning()) {
+                executeSimulationStep(state);
+            }
         }
     }
 
+
     public SimulationStateDTO getSimulationStatus() {
-        return new SimulationStateDTO(currentStep, isRunning, speedMultiplier);
+        SimulationState state = getSimulationState();
+        return SimulationStateDTO.builder()
+                .currentStep(state.getCurrentStep())
+                .isRunning(state.getIsRunning())
+                .speedMultiplier(state.getSpeedMultiplier())
+                .build();
     }
 
     public void startSimulation() {
-        this.isRunning = true;
+        SimulationState state = getSimulationState();
+        state.setIsRunning(true);
+        simulationStateRepository.save(state);
     }
 
     public void pauseSimulation() {
-        this.isRunning = false;
+        SimulationState state = getSimulationState();
+        state.setIsRunning(false);
+        simulationStateRepository.save(state);
     }
 
     public void resetSimulation() {
-        this.currentStep = 0;
-        this.isRunning = false;
-        // Add additional reset logic as needed
+        SimulationState state = getSimulationState();
+        state.setCurrentStep(0);
+        state.setIsRunning(false);
+        simulationStateRepository.save(state);
     }
 
     public void executeSingleStep() {
-        executeSimulationStep();
+        executeSimulationStep(getSimulationState());
     }
 
     public void setSimulationSpeed(double speedMultiplier) {
         if (speedMultiplier <= 0) {
             throw new IllegalArgumentException("Speed multiplier must be positive");
         }
-        this.speedMultiplier = speedMultiplier;
+        SimulationState state = getSimulationState();
+        state.setSpeedMultiplier(speedMultiplier);
+        simulationStateRepository.save(state);
     }
 
-    private void executeSimulationStep() {
-        currentStep++;
+    public double getCurrentSpeedMultiplier() {
+        return getSimulationState().getSpeedMultiplier();
+    }
 
-        // 1. Update all plants
+    private SimulationState getSimulationState() {
+        // Get or create the single simulation state record
+        return simulationStateRepository.findById(1L)
+                .orElseGet(() -> simulationStateRepository.save(
+                        SimulationState.builder()
+                                .id(1L)
+                                .currentStep(0)
+                                .isRunning(false)
+                                .speedMultiplier(1.0)
+                                .build()));
+    }
+
+    private void executeSimulationStep(SimulationState state) {
+        state.setCurrentStep(state.getCurrentStep() + 1);
+        simulationStateRepository.save(state);
+
         updatePlants();
-
-        // 2. Update all insects
         updateInsects();
-
-        // 3. Apply treatments
-        treatmentService.activateTreatments(currentStep);
-
-        // 4. Update environmental conditions
+        treatmentService.activateTreatments(state.getCurrentStep());
         updateEnvironmentalConditions();
     }
 
@@ -84,7 +120,6 @@ public class SimulationService {
         plants.forEach(plant -> {
             plant.setCurrentAge(plant.getCurrentAge() + 1);
 
-            // Handle runner plants colonization
             if (plant.getIsRunner() && plant.getColonizationProbability() != null) {
                 tryColonizeAdjacentParcel(plant);
             }
@@ -94,6 +129,7 @@ public class SimulationService {
 
     private void updateInsects() {
         List<Insect> insects = insectRepository.findAll();
+
         insects.forEach(insect -> {
             Parcel parcel = insect.getParcel();
             boolean hasFood = !parcel.getPlants().isEmpty();
@@ -103,42 +139,44 @@ public class SimulationService {
             } else {
                 insect.setStepsWithoutFood(insect.getStepsWithoutFood() + 1);
                 if (insect.getStepsWithoutFood() >= 5) {
-                    insect.setHealthIndex(0); // Insect dies
+                    insect.setHealthIndex(0);
                 } else {
                     insect.setHealthIndex(Math.max(0, insect.getHealthIndex() - 1));
                 }
             }
 
-            // Handle insect movement
             if (Math.random() < insect.getMobility()) {
                 moveInsectToAdjacentParcel(insect);
             }
         });
 
-        // Remove dead insects
         List<Insect> deadInsects = insects.stream()
                 .filter(i -> i.getHealthIndex() <= 0)
                 .collect(Collectors.toList());
 
         insectRepository.deleteAll(deadInsects);
-        insectRepository.saveAll(insects);
+
+        List<Insect> aliveInsects = insects.stream()
+                .filter(i -> i.getHealthIndex() > 0)
+                .collect(Collectors.toList());
+
+        insectRepository.saveAll(aliveInsects);
     }
 
+
     private void updateEnvironmentalConditions() {
-        // Natural humidity decay
         List<Parcel> parcels = parcelRepository.findAll();
         parcels.forEach(p -> p.setHumidityLevel(p.getHumidityLevel() * 0.98));
         parcelRepository.saveAll(parcels);
     }
 
-    // Helper methods for plant colonization and insect movement...
     private void tryColonizeAdjacentParcel(Plant plant) {
         if (Math.random() < plant.getColonizationProbability()) {
             Parcel currentParcel = plant.getParcel();
             List<Parcel> adjacentParcels = findAdjacentParcels(currentParcel);
 
             adjacentParcels.stream()
-                    .filter(p -> p.getPlants().isEmpty()) // Only colonize empty parcels
+                    .filter(p -> p.getPlants().isEmpty())
                     .findFirst()
                     .ifPresent(targetParcel -> {
                         Plant newPlant = new Plant();

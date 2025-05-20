@@ -18,11 +18,9 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
     @Query("SELECT p FROM Parcel p WHERE p.xCoordinate = :x AND p.yCoordinate = :y")
     Optional<Parcel> findByxCoordinateAndyCoordinate(@Param("x") int x, @Param("y") int y);
 
-    // Find parcels with humidity below a threshold
     @Query("SELECT p FROM Parcel p WHERE p.humidityLevel < :threshold")
     List<Parcel> findDryParcels(@Param("threshold") double threshold);
 
-    // Find parcels with plants that have reached maturity
     @Query("SELECT p FROM Parcel p JOIN p.plants pl WHERE pl.currentAge >= pl.maturityAge")
     List<Parcel> findParcelsWithMaturePlants();
 }

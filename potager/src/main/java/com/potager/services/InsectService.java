@@ -84,16 +84,13 @@ public class InsectService {
 
         insects.forEach(insect -> {
             if (Math.random() > insect.getInsecticideResistance()) {
-                // Insect dies if random number is greater than its resistance
                 insect.setHealthIndex(0);
             } else {
-                // Otherwise, it takes some damage
                 int damage = (int) (Math.random() * effectiveness * 5);
                 insect.setHealthIndex(Math.max(0, insect.getHealthIndex() - damage));
             }
         });
 
-        // Remove dead insects
         List<Insect> deadInsects = insects.stream()
                 .filter(i -> i.getHealthIndex() <= 0)
                 .collect(Collectors.toList());

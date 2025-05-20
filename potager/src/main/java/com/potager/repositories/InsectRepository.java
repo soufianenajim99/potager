@@ -13,15 +13,13 @@ import java.util.Optional;
 @Repository
 public interface InsectRepository extends JpaRepository<Insect, Long> {
 
-    // Find insects by species
     List<Insect> findBySpecies(String species);
 
     List<Insect> findByParcelId(Long parcelId);
-    // Find healthy insects (health > 5)
+
     @Query("SELECT i FROM Insect i WHERE i.healthIndex > 5")
     List<Insect> findHealthyInsects();
 
-    // Find insects that haven't eaten recently
     @Query("SELECT i FROM Insect i WHERE i.stepsWithoutFood >= 3")
     List<Insect> findHungryInsects();
 }

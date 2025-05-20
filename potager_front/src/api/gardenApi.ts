@@ -49,3 +49,31 @@ export const getSimulationStatus = async (): Promise<SimulationState> => {
     const response = await apiClient.get('/simulation/status');
     return response.data;
 };
+
+// Add to gardenApi.ts
+export const loadGardenFromXml = async (xmlContent: string): Promise<void> => {
+    await apiClient.post('/garden-setup/load-xml', xmlContent, {
+        headers: {
+            'Content-Type': 'application/xml',
+        },
+    });
+};
+
+export const uploadGardenXmlFile = async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await apiClient.post('/garden-setup/upload-xml', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
+export const loadPresetGarden = async (presetName: string): Promise<void> => {
+    await apiClient.post(`/garden-setup/load-preset/${presetName}`);
+};
+
+export const getAvailablePresets = async (): Promise<{name: string, description: string}[]> => {
+    const response = await apiClient.get('/garden-setup/available-presets');
+    return response.data;
+};

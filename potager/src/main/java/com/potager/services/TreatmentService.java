@@ -77,10 +77,8 @@ public class TreatmentService {
         device.getPrograms().stream()
                 .filter(program -> isProgramActive(program, currentStep))
                 .forEach(program -> {
-                    // Get all parcels in radius
                     List<Parcel> affectedParcels = getParcelsInRadius(device.getParcel(), device.getRadius());
 
-                    // Apply treatment based on type
                     switch (program.getType()) {
                         case WATER:
                             affectedParcels.forEach(p -> p.setHumidityLevel(Math.min(100, p.getHumidityLevel() + 20)));
@@ -127,6 +125,7 @@ public class TreatmentService {
         if (!treatmentProgramRepository.existsById(programId)) {
             throw new EntityNotFoundException("Treatment program not found with id: " + programId);
         }
+
         treatmentProgramRepository.deleteById(programId);
     }
     public void activateTreatments(int currentStep) {

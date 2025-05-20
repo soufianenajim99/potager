@@ -12,10 +12,8 @@ import java.util.Optional;
 @Repository
 public interface TreatmentDeviceRepository extends JpaRepository<TreatmentDevice, Long> {
 
-    // Find devices by parcel
     Optional<TreatmentDevice> findByParcelId(Long parcelId);
 
-    // Find devices with active programs at current step
     @Query("SELECT DISTINCT td FROM TreatmentDevice td JOIN td.programs p " +
             "WHERE :currentStep BETWEEN p.startTime AND p.startTime + p.duration")
     List<TreatmentDevice> findActiveDevices(@Param("currentStep") int currentStep);

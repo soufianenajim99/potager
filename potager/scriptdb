@@ -1,0 +1,92 @@
+-- Clear existing data (optional - use with caution in production)
+TRUNCATE TABLE treatment_programs CASCADE;
+TRUNCATE TABLE treatment_devices CASCADE;
+TRUNCATE TABLE plants CASCADE;
+TRUNCATE TABLE insects CASCADE;
+TRUNCATE TABLE parcels CASCADE;
+TRUNCATE TABLE simulation_state CASCADE;
+
+-- Reset sequences
+ALTER SEQUENCE parcels_id_seq RESTART WITH 1;
+ALTER SEQUENCE plants_id_seq RESTART WITH 1;
+ALTER SEQUENCE insects_id_seq RESTART WITH 1;
+ALTER SEQUENCE treatment_devices_id_seq RESTART WITH 1;
+ALTER SEQUENCE treatment_programs_id_seq RESTART WITH 1;
+ALTER SEQUENCE simulation_state_id_seq RESTART WITH 1;
+
+-- Insert simulation state
+INSERT INTO simulation_state (current_step, is_running, speed_multiplier)
+VALUES (0, false, 1.0);
+
+-- Create a 5x5 grid of parcels
+INSERT INTO parcels (x_coordinate, y_coordinate, humidity_level)
+VALUES 
+-- Row 1
+(0, 0, 45.0), (1, 0, 50.0), (2, 0, 55.0), (3, 0, 60.0), (4, 0, 65.0),
+-- Row 2
+(0, 1, 40.0), (1, 1, 45.0), (2, 1, 50.0), (3, 1, 55.0), (4, 1, 60.0),
+-- Row 3
+(0, 2, 35.0), (1, 2, 40.0), (2, 2, 45.0), (3, 2, 50.0), (4, 2, 55.0),
+-- Row 4
+(0, 3, 30.0), (1, 3, 35.0), (2, 3, 40.0), (3, 3, 45.0), (4, 3, 50.0),
+-- Row 5
+(0, 4, 25.0), (1, 4, 30.0), (2, 4, 35.0), (3, 4, 40.0), (4, 4, 45.0);
+
+-- Add plants to some parcels
+INSERT INTO plants (species, current_age, maturity_age, is_runner, colonization_probability, parcel_id)
+VALUES
+-- Tomatoes in center
+('Tomato', 15, 60, false, NULL, 13),
+('Tomato', 20, 60, false, NULL, 13),
+-- Strawberries (runners)
+('Strawberry', 10, 30, true, 0.3, 7),
+('Strawberry', 8, 30, true, 0.3, 7),
+('Strawberry', 12, 30, true, 0.3, 8),
+-- Carrots
+('Carrot', 5, 45, false, NULL, 19),
+('Carrot', 7, 45, false, NULL, 19),
+-- Lettuce
+('Lettuce', 25, 35, false, NULL, 11),
+('Lettuce', 30, 35, false, NULL, 16),
+-- Mature plants for testing
+('Pepper', 50, 50, false, NULL, 3),
+('Pepper', 55, 50, false, NULL, 3),
+('Basil', 40, 40, false, NULL, 22);
+
+-- Add insects to some parcels
+INSERT INTO insects (species, sex, health_index, mobility, insecticide_resistance, steps_without_food, parcel_id)
+VALUES
+-- Aphids (weak against insecticides)
+('Aphid', 'FEMALE', 8, 0.2, 0.1, 0, 7),
+('Aphid', 'MALE', 7, 0.2, 0.1, 0, 7),
+('Aphid', 'FEMALE', 9, 0.2, 0.1, 0, 8),
+-- Ladybugs (good health)
+('Ladybug', 'FEMALE', 10, 0.8, 0.9, 0, 13),
+('Ladybug', 'MALE', 10, 0.8, 0.9, 0, 13),
+-- Bees (mobile)
+('Bee', 'FEMALE', 9, 0.9, 0.7, 0, 3),
+('Bee', 'FEMALE', 8, 0.9, 0.7, 0, 3),
+-- Some unhealthy insects
+('Caterpillar', 'MALE', 3, 0.4, 0.5, 4, 19),
+('Caterpillar', 'FEMALE', 2, 0.4, 0.5, 5, 19);
+
+-- Add treatment devices to some parcels
+INSERT INTO treatment_devices (radius, parcel_id)
+VALUES
+-- Sprinkler in center (large radius)
+(3, 13),
+-- Small sprayer in corner
+(1, 1),
+-- Medium sprayer
+(2, 25);
+
+-- Add treatment programs
+INSERT INTO treatment_programs (start_time, duration, type, device_id)
+VALUES
+-- Morning watering
+(360, 30, 'WATER', 1),
+(360, 20, 'WATER', 2),
+-- Evening insecticide
+(1080, 15, 'INSECTICIDE', 1),
+-- Weekly fertilizer
+(720, 10, 'FERTILIZER', 3);
